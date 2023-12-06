@@ -121,6 +121,8 @@ QString JsonToStructEngine::createCodeSegment(const JsonObjList &structTm)
     QList<QSharedPointer<JsonValueItem>> arraySubValues;
     auto classT = createClassStrTemplate();
     for(auto aClass : structTm){
+        if(aClass->items.count() == 0 )continue;
+
         auto aClassStr = classT.arg(aClass->parent->qKeySubDefineName())
                 .arg(aClass->creatDefineParameters().join("\n\n    "))
                 .arg(aClass->items.at(0)->formalParName())
