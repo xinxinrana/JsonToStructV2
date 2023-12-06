@@ -22,9 +22,9 @@ QString JsonToStructEngine::installJsonToStruct(const QJsonObject &json,
                                                 const QString& Name)
 {
     auto parent = creatMainItem(Name);
+
     getQtTypeTreeFromJsonObj(json,QSharedPointer<JsonValueItem>(parent));
 
-    // update
     checkParentNames(m_structTemplates,true);
 
     return createCodeSegment(m_structTemplates);
@@ -115,33 +115,136 @@ QSharedPointer<JsonObjectItem> JsonToStructEngine::getQtTypeTreeFromJsonObj(cons
 
 QString JsonToStructEngine::createCodeSegment(const JsonObjList &structTm)
 {
-    for(auto aStruct : structTm){
-        qDebug() << aStruct->parent->qKeySubDefineName();
-        for(auto aValue : aStruct->items){
-            QString itemStr;
-            itemStr += aValue->qKeyDefineName() += "____";
-            itemStr += aValue->qKeySubDefineName() += "____";
-            itemStr += aValue->qKeyParameterName();
-            qDebug() << itemStr;
+
+    QString head,middle,end;
+
+    QList<QSharedPointer<JsonValueItem>> arraySubValues;
+    auto classT = createClassStrTemplate();
+    for(auto aClass : structTm){
+        auto aClassStr = classT.arg(aClass->parent->qKeySubDefineName())
+                .arg(aClass->creatDefineParameters().join("\n\n    "))
+                .arg(aClass->items.at(0)->formalParName())
+                .arg(aClass->createAssignmentParameters().join("\n        "));
+
+        middle += aClassStr +"\n\n";
+
+        // 处理 List 赋值问题
+        for(auto &aValue : aClass->items){
+            if(aValue->type == QJsonValue::Array){
+                arraySubValues << aValue.staticCast<JsonValueItemArray>()->child();
+            }
         }
-        qDebug() << "++++++++++++++";
     }
-    return QString();
 
-//    QString Template1 =
-//R"(
-//%1
-//%2
-//%3
-//)";
-//    QString head,middle,end;
+    if(arraySubValues.isEmpty() == false){
+        head += createSetArrayDataTemplate();
 
-//    QString structs;
-//    for(auto aStruct : structTm){
-//        aStruct->parent->qKeySubDefine();
-//    }
+        QSet<QString> arraySubDefineName;
+        for(auto subType : arraySubValues){
+            if(arraySubDefineName.contains(subType->qKeyDefineName())){
+                continue;
+            }
+            arraySubDefineName << subType->qKeyDefineName();
+            head += "\n";
+            head += createSubSetArrayDataTemplateDefine().arg(subType->qKeyDefineName());
 
-    //    return QString();
+            end += createSubSetArrayDataTemplateRealize().arg(subType->qKeyDefineName())
+                    .arg(Tools::JSonTypeToConversionStr(subType->getUpdateType()));
+        }
+
+        QString defineNames;
+        for(auto defineName : arraySubDefineName){
+            defineNames += createSubSetArrayTypeDefine().arg(defineName) ;
+        }
+        head.insert(0,defineNames);
+    }
+    head.insert(0,creatrIncludeTemplate());
+
+    QString Template1 =
+R"(
+%1
+%2
+%3
+)";
+    return Template1.arg(head).arg(middle).arg(end);
+}
+
+QString JsonToStructEngine::createClassStrTemplate()
+{
+    return QString(R"(
+class %1{
+
+public:
+
+    %2
+
+
+    void operator=(const QJsonObject& %3){
+
+        %4
+    }
+
+   QJsonObject toJsonObject(){
+
+       // %5
+   }
+};
+                   )");
+}
+
+QString JsonToStructEngine::createSetArrayDataTemplate()
+{
+    return QString(R"(
+template <typename T>
+void __JsonToStructFunc__setArray(T& arr,const QJsonArray& data)
+{
+   auto item = arr.value(0);
+   for(auto aValue : data){
+       __JsonToStructFunc__setData(item ,aValue);
+       arr.append(item);
+   }
+}
+
+template <typename T>
+void __JsonToStructFunc__setData(T& arr,const QJsonValue& data){
+   __JsonToStructFunc__setArray(arr , data.toArray());
+}
+)");
+}
+
+QString JsonToStructEngine::createSubSetArrayDataTemplateDefine()
+{
+    return QString(R"(
+void __JsonToStructFunc__setData(%1& arr,const QJsonValue& data);
+)");
+}
+
+QString JsonToStructEngine::createSubSetArrayDataTemplateRealize()
+{
+    return QString(R"(
+void __JsonToStructFunc__setData(%1& arr,const QJsonValue& data){
+arr = data.to%2();
+}
+)");
+}
+
+QString JsonToStructEngine::createSubSetArrayTypeDefine()
+{
+    return QString(R"(
+class %1;
+                   )");
+}
+
+QString JsonToStructEngine::creatrIncludeTemplate()
+{
+    return QString(R"(
+
+#include <QList>
+#include <QJsonArray>
+#include <QJsonValue>
+#include <QJsonObject>
+
+)");
 }
 
 JsonToStructEngine::JsonObjList JsonToStructEngine::checkParentNames
@@ -160,9 +263,10 @@ JsonToStructEngine::JsonObjList JsonToStructEngine::checkParentNames
         for(auto aStruct : rData){
             auto suffix = Tools::getNextOrder();
             auto oldName = aStruct->parent->qKeySubDefineName();
-            qDebug()<<oldName<< QStringLiteral("由于重名已经更新为 %1").arg(oldName + suffix);
+            qDebug() << oldName << QStringLiteral("由于重名已经更新为 %1")
+                        .arg(oldName + suffix);
 
-            aStruct->parent->updateSubDefineNameFunc =
+            aStruct->parent->updateClassNameFunc =
                     [suffix](QString str)->QString{return str + suffix;};
         }
     }

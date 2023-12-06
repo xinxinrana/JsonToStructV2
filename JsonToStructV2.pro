@@ -3,6 +3,12 @@ QT       += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
+CONFIG += qscintilla2
+
+INCLUDEPATH += $$PWD/ThirdPartyLibrary/include
+LIBS += -L$$PWD/ThirdPartyLibrary/lib -lqscintilla2_qt5d
+LIBS += -L$$PWD/ThirdPartyLibrary/dll -lqscintilla2_qt5d
+#DEFINES += $$PWD/ThirdPartyLibrary/dll
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -21,6 +27,7 @@ SOURCES += \
     jsontostructengine.cpp \
     main.cpp \
     mainwindow.cpp \
+    structtest.cpp \
     tools/tools.cpp
 
 HEADERS += \
@@ -28,6 +35,7 @@ HEADERS += \
     jsonexample.h \
     jsontostructengine.h \
     mainwindow.h \
+    structtest.h \
     tools/tools.h
 
 FORMS += \

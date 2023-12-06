@@ -1,7 +1,9 @@
-#ifndef MAINWINDOW_H
+﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+
+class QsciScintilla;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -21,5 +23,7 @@ private:
 
 private:
     Ui::MainWindow *ui;
+    QsciScintilla* m_edit1;
+    QsciScintilla* m_edit2;
 };
 #endif // MAINWINDOW_H

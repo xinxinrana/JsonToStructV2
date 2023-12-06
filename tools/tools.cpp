@@ -16,7 +16,7 @@ Tools::Tools()
 QString Tools::namingCheck(const QString &str, bool *isOk)
 {
     static QSet<QString> hasPrint;
-    auto newName = QString("R_") + str + QString("_rename");
+    auto newName = QString("Rename") + str ;
 
     bool needUpdate = false;
     auto t1 = toUpperCaseCamelCase(str);
@@ -24,7 +24,7 @@ QString Tools::namingCheck(const QString &str, bool *isOk)
     if(t1 == t2 || isCppKeyword(str) || isQtClassName(str)){
         needUpdate = true;
         if(hasPrint.contains(str) == false)
-            qDebug() << "key: "<< str <<QStringLiteral("已经被转换为 %1").arg(newName);
+            qDebug() << "key: "<< str <<QStringLiteral("不适合作为类名，已经被修改为： %1").arg(newName);
         hasPrint << str;
     }
 
