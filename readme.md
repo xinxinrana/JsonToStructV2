@@ -2,9 +2,10 @@
 
 JsonToStructV2 是一个通过 json 自动生成数据数据类代码片段的小工具：
 
-![界面](.\doc\show.png)
+<--![界面](.\doc\show.png)-->
 
- 
+![show](https://github.com/xinxinrana/JsonToStructV2/assets/102397752/01b8a968-1a8d-4feb-8c01-50d719eac2fc)
+
 
 ```Json
 {  
